@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Saur Admin - Manajemen Sales</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SaurAdmin">
+    <meta name="theme-color" content="#4f46e5">
+    
+    <!-- Link Manifest (Inline Data URI agar tetap satu file) -->
+    <link rel="manifest" href='data:application/json,{"name":"Saur Admin","short_name":"SaurAdmin","start_url":".","display":"standalone","background_color":"#f8fafc","theme_color":"#4f46e5","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/3144/3144456.png","sizes":"512x512","type":"image/png"}]}'>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            background-color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .input-focus:focus {
+            outline: none;
+            border-bottom: 2px solid #4f46e5;
+        }
+        #capture-area {
+            padding: 20px;
+            background: white;
+            width: 320px;
+        }
+        .mini-note {
+            background: white;
+            border-left: 3px solid #10b981;
+            padding: 6px 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        /* Optimalisasi Touch Target untuk HP */
+        button, .clickable {
+            min-height: 44px;
+            min-width: 44px;
+        }
+    </style>
+</head>
+<body class="p-3 md:p-6 pb-20">
+
+    <div id="app" class="max-w-md mx-auto">
+        <!-- Header -->
+        <header class="mb-4 flex justify-between items-center">
+            <div onclick="triggerSecretReset()">
+                <h1 class="text-xl font-black text-indigo-800 italic tracking-tighter">SAUR ADMIN</h1>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="showStats()" class="p-2 text-indigo-600 active:scale-90 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                </button>
+                <button onclick="showAddSalesModal()" class="p-2 text-indigo-600 active:scale-90 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Tampilan Utama -->
+        <div id="main-view">
+            <div class="mb-4 space-y-1">
+                <div class="flex justify-between items-center px-1">
+                    <h2 class="text-[10px] font-black text-indigo-600 uppercase italic tracking-widest">SALDO PENDING (BELUM BAYAR)</h2>
+                    <div id="total-summary-mini" class="text-[10px] font-bold text-gray-500"></div>
+                </div>
+                <div id="sales-receivable-list" class="space-y-1"></div>
+            </div>
+
+            <h4 class="text-[9px] font-black text-gray-400 uppercase italic tracking-widest mb-3 border-b pb-1">DATABASE SALES</h4>
+            <div id="sales-list" class="grid grid-cols-4 gap-3 mb-8"></div>
+        </div>
+
+        <!-- Sisanya tetap sama sesuai logika terakhir -->
+        <div id="stats-view" class="hidden">
+            <button onclick="hideStats()" class="mb-4 text-indigo-600 text-xs font-bold flex items-center uppercase italic">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg> Kembali
+            </button>
+            <div class="card p-4 mb-4">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Filter Bulan</label>
+                <input type="month" id="stats-month-filter" onchange="renderStats()" class="w-full p-2 border rounded-md text-sm outline-none">
+            </div>
+            <div id="stats-content"></div>
+        </div>
+
+        <div id="sales-detail" class="hidden pb-10">
+            <div class="flex justify-between items-center mb-4">
+                <button onclick="closeDetail()" class="text-indigo-600 font-bold text-sm flex items-center italic">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg> DASHBOARD
+                </button>
+                <button onclick="deleteSales()" class="text-red-400 text-[10px] font-bold uppercase">Hapus Sales</button>
+            </div>
+            
+            <div id="input-section" class="card p-4 mb-5 border-t-4 border-indigo-600">
+                <input type="text" id="detail-name" class="text-lg font-black text-gray-800 uppercase w-full input-focus mb-3 italic" placeholder="Nama Sales">
+                <div class="space-y-3">
+                    <input type="datetime-local" id="input-date" class="w-full p-2 border rounded text-xs outline-none bg-gray-50">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-indigo-50 p-2 rounded border border-indigo-100">
+                            <p class="text-[8px] font-bold text-indigo-400 uppercase mb-1">Ambil Kecil</p>
+                            <div class="flex gap-1">
+                                <input type="number" id="input-ball-kecil" class="w-full p-1 border rounded text-sm" placeholder="Krsk">
+                                <input type="number" id="input-pack-kecil" class="w-full p-1 border rounded text-sm" placeholder="Pak">
+                            </div>
+                        </div>
+                        <div class="bg-orange-50 p-2 rounded border border-orange-100">
+                            <p class="text-[8px] font-bold text-orange-400 uppercase mb-1">Ambil Besar</p>
+                            <div class="flex gap-1">
+                                <input type="number" id="input-ball-besar" class="w-full p-1 border rounded text-sm" placeholder="Krsk">
+                                <input type="number" id="input-biji-besar" class="w-full p-1 border rounded text-sm" placeholder="Biji">
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="saveNewEntry()" class="w-full bg-indigo-600 text-white p-2 rounded font-bold text-xs shadow uppercase italic active:scale-95 transition">Simpan Pengambilan</button>
+                </div>
+            </div>
+
+            <div id="merge-container" class="hidden mb-5">
+                <button onclick="initMerge()" class="w-full bg-emerald-600 text-white p-3 rounded-xl font-black text-xs shadow-lg uppercase italic flex items-center justify-center gap-2">
+                    Gabung & Bereskan Semua Pending
+                </button>
+            </div>
+
+            <h2 class="text-[10px] font-black text-gray-400 mb-3 uppercase italic border-b pb-1">RIWAYAT AKTIF</h2>
+            <div id="history-list" class="space-y-3"></div>
+            <div class="mt-8 border-t pt-4">
+                <h3 class="text-[9px] font-black text-gray-300 uppercase italic mb-3">Selesai (Lunas)</h3>
+                <div id="mini-history-list" class="space-y-1"></div>
+            </div>
+        </div>
+
+        <div id="secret-reset-area" class="hidden p-4 mt-10 border-2 border-dashed border-red-100 text-center rounded-xl">
+            <button onclick="clearAllData()" class="bg-red-500 text-white text-[10px] font-bold px-4 py-2 rounded uppercase italic">Reset Database</button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-retur" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[100] backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-5 w-full max-w-xs shadow-2xl">
+            <h3 id="modal-retur-title" class="text-sm font-black text-gray-800 uppercase italic mb-1">Input Retur</h3>
+            <p id="modal-retur-desc" class="text-[9px] text-gray-400 font-bold mb-4 uppercase"></p>
+            <div class="space-y-4">
+                <div class="bg-indigo-50 p-3 rounded">
+                    <p class="text-[9px] font-bold text-indigo-400 uppercase mb-2">Retur Kecil</p>
+                    <div class="flex gap-2"><input type="number" id="update-ball-kecil" oninput="calcReturKecil()" class="w-full p-2 border rounded text-sm" placeholder="Krsk"><input type="number" id="update-pack-kecil" oninput="calcReturKecil()" class="w-full p-2 border rounded text-sm" placeholder="Pak"></div>
+                    <p class="text-[9px] mt-1 text-indigo-600 font-bold italic text-right">Total: <span id="total-pack-label">0</span> Pak</p>
+                </div>
+                <div class="bg-orange-50 p-3 rounded">
+                    <p class="text-[9px] font-bold text-orange-400 uppercase mb-2">Retur Besar</p>
+                    <div class="flex gap-2"><input type="number" id="update-ball-besar" oninput="calcReturBesar()" class="w-full p-2 border rounded text-sm" placeholder="Krsk"><input type="number" id="update-biji-besar" oninput="calcReturBesar()" class="w-full p-2 border rounded text-sm" placeholder="Biji"></div>
+                    <p class="text-[9px] mt-1 text-orange-600 font-bold italic text-right">Total: <span id="total-biji-label">0</span> Biji</p>
+                </div>
+                <div class="flex items-center gap-2 p-1"><input type="checkbox" id="update-paid" class="h-4 w-4" checked><label for="update-paid" class="text-xs font-bold text-gray-600">Sudah Dibayar (Lunas)</label></div>
+                <div class="flex gap-2"><button onclick="confirmUpdateRetur()" class="flex-1 bg-indigo-600 text-white p-2 rounded font-bold text-xs uppercase italic">SIMPAN</button><button onclick="hideReturModal()" class="flex-1 bg-gray-100 text-gray-500 p-2 rounded font-bold text-xs uppercase italic">BATAL</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Capture Area -->
+    <div style="position: absolute; left: -9999px;"><div id="capture-area"></div></div>
+
+    <script>
+        // Logika Database & Rendering sama seperti sebelumnya
+        const SALES_KEY = 'saur_sales';
+        const DATA_KEY = 'saur_data';
+        let salesList = [], salesData = {}, activeSalesId = null, activeEntryId = null, clicks = 0, isMerging = false;
+
+        function load() {
+            salesList = JSON.parse(localStorage.getItem(SALES_KEY)) || [{id:1, name:'Sales A'}];
+            salesData = JSON.parse(localStorage.getItem(DATA_KEY)) || {};
+        }
+        function save() {
+            localStorage.setItem(SALES_KEY, JSON.stringify(salesList));
+            localStorage.setItem(DATA_KEY, JSON.stringify(salesData));
+        }
+        function formatMoney(num) { return "Rp " + Math.round(num || 0).toLocaleString('id-ID'); }
+        function formatUnitDetailed(total, per, unitName) {
+            const k = Math.floor(total / per); const u = total % per;
+            let parts = []; if (k > 0) parts.push(`${k} Krsk`); if (u > 0) parts.push(`${u} ${unitName}`);
+            return parts.length ? parts.join(' ') : `0 ${unitName}`;
+        }
+        function calc(e) {
+            const lakuK = Math.max(0, e.stokKecilTotal - (e.sisaKecil || 0));
+            const lakuB = Math.max(0, e.stokBesarTotal - (e.sisaBesar || 0));
+            const bruto = (lakuK * 20000) + (lakuB * 4000);
+            const komisi = bruto * 0.1;
+            return { bruto, komisi, netto: bruto - komisi, lakuK, lakuB };
+        }
+
+        function renderDashboard() {
+            const listEl = document.getElementById('sales-list');
+            listEl.innerHTML = '';
+            salesList.forEach(s => {
+                const d = document.createElement('div');
+                d.className = "flex flex-col items-center cursor-pointer";
+                d.onclick = () => openDetail(s.id, s.name);
+                d.innerHTML = `<div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center border-2 border-indigo-50 shadow-sm active:scale-90 transition font-black text-indigo-600 text-lg">${s.name[0].toUpperCase()}</div><span class="mt-1 text-[8px] font-black text-gray-500 uppercase truncate w-full text-center">${s.name}</span>`;
+                listEl.appendChild(d);
+            });
+            updatePendingList();
+        }
+
+        function updatePendingList() {
+            const list = document.getElementById('sales-receivable-list');
+            list.innerHTML = '';
+            let totalM = 0;
+            salesList.forEach(s => {
+                const entries = salesData[s.id] || [];
+                let m = 0, totalK = 0, totalB = 0, hasPending = false;
+                entries.forEach(e => { 
+                    if(!e.isPaid) { 
+                        m += calc(e).netto; totalK += e.stokKecilTotal; totalB += e.stokBesarTotal; hasPending = true;
+                    } 
+                });
+                if(hasPending) {
+                    totalM += m;
+                    const row = document.createElement('div');
+                    row.className = "bg-white p-2 border-l-2 border-red-500 flex justify-between items-center text-[10px] active:scale-[0.98] transition cursor-pointer rounded-sm shadow-sm";
+                    row.onclick = () => openDetail(s.id, s.name);
+                    row.innerHTML = `<div><span class="font-black text-gray-700 uppercase italic">${s.name}</span></div><span class="font-black text-red-600 italic">${formatMoney(m)}</span>`;
+                    list.appendChild(row);
+                }
+            });
+            if(!list.innerHTML) list.innerHTML = `<div class="text-center py-2 text-[8px] font-bold text-gray-300 uppercase italic">SEMUA LUNAS</div>`;
+            document.getElementById('total-summary-mini').innerText = formatMoney(totalM);
+        }
+
+        function openDetail(id, name) {
+            activeSalesId = id; document.getElementById('detail-name').value = name;
+            document.getElementById('main-view').classList.add('hidden');
+            document.getElementById('sales-detail').classList.remove('hidden');
+            document.getElementById('input-date').value = new Date(new Date().getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0, 16);
+            const entries = salesData[activeSalesId] || [];
+            const pendingCount = entries.filter(e => !e.isPaid).length;
+            document.getElementById('merge-container').classList.toggle('hidden', pendingCount < 2);
+            renderHistory();
+        }
+
+        function closeDetail() {
+            document.getElementById('main-view').classList.remove('hidden');
+            document.getElementById('sales-detail').classList.add('hidden');
+            renderDashboard();
+        }
+
+        function saveNewEntry() {
+            const bk = parseInt(document.getElementById('input-ball-kecil').value)||0, pk = parseInt(document.getElementById('input-pack-kecil').value)||0;
+            const bb = parseInt(document.getElementById('input-ball-besar').value)||0, bj = parseInt(document.getElementById('input-biji-besar').value)||0;
+            const tk = (bk*5)+pk, tb = (bb*25)+bj, dt = document.getElementById('input-date').value;
+            if(!tk && !tb) return;
+            if(!salesData[activeSalesId]) salesData[activeSalesId] = [];
+            salesData[activeSalesId].push({ id: 'e'+Date.now(), date: dt, stokKecilTotal: tk, stokBesarTotal: tb, sisaKecil: 0, sisaBesar: 0, isPaid: false, isUpdated: false });
+            save(); openDetail(activeSalesId, document.getElementById('detail-name').value);
+        }
+
+        function renderHistory() {
+            const fullList = document.getElementById('history-list');
+            const miniList = document.getElementById('mini-history-list');
+            fullList.innerHTML = ''; miniList.innerHTML = '';
+            const ens = salesData[activeSalesId] || [];
+            const sortedEns = [...ens].sort((a,b) => new Date(b.date) - new Date(a.date));
+            sortedEns.forEach(e => {
+                const r = calc(e); const dt = new Date(e.date).toLocaleString('id-ID',{day:'2-digit',month:'short'});
+                if (e.isPaid) {
+                    const note = document.createElement('div'); note.className = "mini-note";
+                    note.innerHTML = `<span>${dt}</span><div class="flex items-center gap-3"><span class="text-indigo-600">${formatMoney(r.netto)}</span><button onclick="delEntry('${e.id}'); event.stopPropagation();" class="text-gray-300">✕</button></div>`;
+                    miniList.appendChild(note);
+                } else {
+                    const d = document.createElement('div'); d.className = "card p-3 border-l-4 border-orange-400";
+                    d.innerHTML = `<div class="flex justify-between items-center mb-1"><span class="text-[9px] font-bold text-gray-400 italic">${dt}</span><button onclick="delEntry('${e.id}')" class="text-gray-300">✕</button></div><button onclick="openReturModal('${e.id}')" class="w-full bg-orange-600 text-white p-2.5 rounded text-[9px] font-black uppercase italic">Input Retur & Selesaikan</button>`;
+                    fullList.appendChild(d);
+                }
+            });
+        }
+
+        function openReturModal(eid) {
+            isMerging = false; activeEntryId = eid;
+            const e = salesData[activeSalesId].find(x=>x.id===eid);
+            document.getElementById('modal-retur-desc').innerText = `K: ${formatUnitDetailed(e.stokKecilTotal, 5, 'Pak')} | B: ${formatUnitDetailed(e.stokBesarTotal, 25, 'Biji')}`;
+            document.getElementById('modal-retur').classList.remove('hidden');
+        }
+
+        function hideReturModal() { document.getElementById('modal-retur').classList.add('hidden'); }
+        function calcReturKecil() { const k=parseInt(document.getElementById('update-ball-kecil').value)||0, p=parseInt(document.getElementById('update-pack-kecil').value)||0; document.getElementById('total-pack-label').innerText = (k*5)+p; }
+        function calcReturBesar() { const k=parseInt(document.getElementById('update-ball-besar').value)||0, b=parseInt(document.getElementById('update-biji-besar').value)||0; document.getElementById('total-biji-label').innerText = (k*25)+b; }
+
+        function confirmUpdateRetur() {
+            const idx = salesData[activeSalesId].findIndex(x=>x.id===activeEntryId);
+            if(idx!==-1) {
+                salesData[activeSalesId][idx].sisaKecil = parseInt(document.getElementById('total-pack-label').innerText);
+                salesData[activeSalesId][idx].sisaBesar = parseInt(document.getElementById('total-biji-label').innerText);
+                salesData[activeSalesId][idx].isPaid = document.getElementById('update-paid').checked;
+                salesData[activeSalesId][idx].isUpdated = true;
+            }
+            save(); openDetail(activeSalesId, document.getElementById('detail-name').value); hideReturModal(); updatePendingList();
+        }
+
+        function delEntry(eid) { if(confirm("Hapus?")) { salesData[activeSalesId] = salesData[activeSalesId].filter(x=>x.id!==eid); save(); renderHistory(); updatePendingList(); } }
+
+        // PWA SERVICE WORKER REGISTRATION
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `self.addEventListener('fetch', function(e) { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });`;
+                const blob = new Blob([swCode], {type: 'text/javascript'});
+                const swUrl = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW failed', err));
+            });
+        }
+
+        load(); renderDashboard();
+    </script>
+</body>
+</html>
