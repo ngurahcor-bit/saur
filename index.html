@@ -33,11 +33,6 @@
             outline: none;
             border-bottom: 2px solid #4f46e5;
         }
-        #capture-area {
-            padding: 20px;
-            background: white;
-            width: 320px;
-        }
         .mini-note {
             background: white;
             border-left: 3px solid #10b981;
@@ -53,7 +48,6 @@
             cursor: pointer;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        /* Optimalisasi Touch Target untuk HP */
         button, .clickable {
             min-height: 44px;
             min-width: 44px;
@@ -92,7 +86,7 @@
             <div id="sales-list" class="grid grid-cols-4 gap-3 mb-8"></div>
         </div>
 
-        <!-- Sisanya tetap sama sesuai logika terakhir -->
+        <!-- Statistik -->
         <div id="stats-view" class="hidden">
             <button onclick="hideStats()" class="mb-4 text-indigo-600 text-xs font-bold flex items-center uppercase italic">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg> Kembali
@@ -101,9 +95,10 @@
                 <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Filter Bulan</label>
                 <input type="month" id="stats-month-filter" onchange="renderStats()" class="w-full p-2 border rounded-md text-sm outline-none">
             </div>
-            <div id="stats-content"></div>
+            <div id="stats-content" class="space-y-4"></div>
         </div>
 
+        <!-- Detail Sales -->
         <div id="sales-detail" class="hidden pb-10">
             <div class="flex justify-between items-center mb-4">
                 <button onclick="closeDetail()" class="text-indigo-600 font-bold text-sm flex items-center italic">
@@ -113,7 +108,7 @@
             </div>
             
             <div id="input-section" class="card p-4 mb-5 border-t-4 border-indigo-600">
-                <input type="text" id="detail-name" class="text-lg font-black text-gray-800 uppercase w-full input-focus mb-3 italic" placeholder="Nama Sales">
+                <input type="text" id="detail-name" onchange="updateSalesName()" class="text-lg font-black text-gray-800 uppercase w-full input-focus mb-3 italic" placeholder="Nama Sales">
                 <div class="space-y-3">
                     <input type="datetime-local" id="input-date" class="w-full p-2 border rounded text-xs outline-none bg-gray-50">
                     <div class="grid grid-cols-2 gap-2">
@@ -134,12 +129,6 @@
                     </div>
                     <button onclick="saveNewEntry()" class="w-full bg-indigo-600 text-white p-2 rounded font-bold text-xs shadow uppercase italic active:scale-95 transition">Simpan Pengambilan</button>
                 </div>
-            </div>
-
-            <div id="merge-container" class="hidden mb-5">
-                <button onclick="initMerge()" class="w-full bg-emerald-600 text-white p-3 rounded-xl font-black text-xs shadow-lg uppercase italic flex items-center justify-center gap-2">
-                    Gabung & Bereskan Semua Pending
-                </button>
             </div>
 
             <h2 class="text-[10px] font-black text-gray-400 mb-3 uppercase italic border-b pb-1">RIWAYAT AKTIF</h2>
@@ -163,43 +152,58 @@
             <div class="space-y-4">
                 <div class="bg-indigo-50 p-3 rounded">
                     <p class="text-[9px] font-bold text-indigo-400 uppercase mb-2">Retur Kecil</p>
-                    <div class="flex gap-2"><input type="number" id="update-ball-kecil" oninput="calcReturKecil()" class="w-full p-2 border rounded text-sm" placeholder="Krsk"><input type="number" id="update-pack-kecil" oninput="calcReturKecil()" class="w-full p-2 border rounded text-sm" placeholder="Pak"></div>
+                    <div class="flex gap-2">
+                        <input type="number" id="update-ball-kecil" oninput="calcReturKecil()" class="w-full p-2 border rounded text-sm" placeholder="Krsk">
+                        <input type="number" id="update-pack-kecil" oninput="calcReturKecil()" class="w-full p-2 border rounded text-sm" placeholder="Pak">
+                    </div>
                     <p class="text-[9px] mt-1 text-indigo-600 font-bold italic text-right">Total: <span id="total-pack-label">0</span> Pak</p>
                 </div>
                 <div class="bg-orange-50 p-3 rounded">
                     <p class="text-[9px] font-bold text-orange-400 uppercase mb-2">Retur Besar</p>
-                    <div class="flex gap-2"><input type="number" id="update-ball-besar" oninput="calcReturBesar()" class="w-full p-2 border rounded text-sm" placeholder="Krsk"><input type="number" id="update-biji-besar" oninput="calcReturBesar()" class="w-full p-2 border rounded text-sm" placeholder="Biji"></div>
+                    <div class="flex gap-2">
+                        <input type="number" id="update-ball-besar" oninput="calcReturBesar()" class="w-full p-2 border rounded text-sm" placeholder="Krsk">
+                        <input type="number" id="update-biji-besar" oninput="calcReturBesar()" class="w-full p-2 border rounded text-sm" placeholder="Biji">
+                    </div>
                     <p class="text-[9px] mt-1 text-orange-600 font-bold italic text-right">Total: <span id="total-biji-label">0</span> Biji</p>
                 </div>
-                <div class="flex items-center gap-2 p-1"><input type="checkbox" id="update-paid" class="h-4 w-4" checked><label for="update-paid" class="text-xs font-bold text-gray-600">Sudah Dibayar (Lunas)</label></div>
-                <div class="flex gap-2"><button onclick="confirmUpdateRetur()" class="flex-1 bg-indigo-600 text-white p-2 rounded font-bold text-xs uppercase italic">SIMPAN</button><button onclick="hideReturModal()" class="flex-1 bg-gray-100 text-gray-500 p-2 rounded font-bold text-xs uppercase italic">BATAL</button></div>
+                <div class="flex items-center gap-2 p-1">
+                    <input type="checkbox" id="update-paid" class="h-4 w-4" checked>
+                    <label for="update-paid" class="text-xs font-bold text-gray-600">Sudah Dibayar (Lunas)</label>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="confirmUpdateRetur()" class="flex-1 bg-indigo-600 text-white p-2 rounded font-bold text-xs uppercase italic">SIMPAN</button>
+                    <button onclick="hideReturModal()" class="flex-1 bg-gray-100 text-gray-500 p-2 rounded font-bold text-xs uppercase italic">BATAL</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Hidden Capture Area -->
-    <div style="position: absolute; left: -9999px;"><div id="capture-area"></div></div>
-
     <script>
-        // Logika Database & Rendering sama seperti sebelumnya
         const SALES_KEY = 'saur_sales';
         const DATA_KEY = 'saur_data';
-        let salesList = [], salesData = {}, activeSalesId = null, activeEntryId = null, clicks = 0, isMerging = false;
+        let salesList = [], salesData = {}, activeSalesId = null, activeEntryId = null, secretClicks = 0;
 
         function load() {
             salesList = JSON.parse(localStorage.getItem(SALES_KEY)) || [{id:1, name:'Sales A'}];
             salesData = JSON.parse(localStorage.getItem(DATA_KEY)) || {};
+            // Set filter bulan statistik ke bulan ini sebagai default
+            const now = new Date();
+            document.getElementById('stats-month-filter').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         }
+
         function save() {
             localStorage.setItem(SALES_KEY, JSON.stringify(salesList));
             localStorage.setItem(DATA_KEY, JSON.stringify(salesData));
         }
+
         function formatMoney(num) { return "Rp " + Math.round(num || 0).toLocaleString('id-ID'); }
+
         function formatUnitDetailed(total, per, unitName) {
             const k = Math.floor(total / per); const u = total % per;
             let parts = []; if (k > 0) parts.push(`${k} Krsk`); if (u > 0) parts.push(`${u} ${unitName}`);
             return parts.length ? parts.join(' ') : `0 ${unitName}`;
         }
+
         function calc(e) {
             const lakuK = Math.max(0, e.stokKecilTotal - (e.sisaKecil || 0));
             const lakuB = Math.max(0, e.stokBesarTotal - (e.sisaBesar || 0));
@@ -215,7 +219,12 @@
                 const d = document.createElement('div');
                 d.className = "flex flex-col items-center cursor-pointer";
                 d.onclick = () => openDetail(s.id, s.name);
-                d.innerHTML = `<div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center border-2 border-indigo-50 shadow-sm active:scale-90 transition font-black text-indigo-600 text-lg">${s.name[0].toUpperCase()}</div><span class="mt-1 text-[8px] font-black text-gray-500 uppercase truncate w-full text-center">${s.name}</span>`;
+                d.innerHTML = `
+                    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center border-2 border-indigo-50 shadow-sm active:scale-90 transition font-black text-indigo-600 text-lg">
+                        ${s.name[0].toUpperCase()}
+                    </div>
+                    <span class="mt-1 text-[8px] font-black text-gray-500 uppercase truncate w-full text-center">${s.name}</span>
+                `;
                 listEl.appendChild(d);
             });
             updatePendingList();
@@ -227,18 +236,21 @@
             let totalM = 0;
             salesList.forEach(s => {
                 const entries = salesData[s.id] || [];
-                let m = 0, totalK = 0, totalB = 0, hasPending = false;
+                let m = 0, hasPending = false;
                 entries.forEach(e => { 
-                    if(!e.isPaid) { 
-                        m += calc(e).netto; totalK += e.stokKecilTotal; totalB += e.stokBesarTotal; hasPending = true;
-                    } 
+                    if(!e.isPaid && e.isUpdated) { 
+                        m += calc(e).netto; hasPending = true;
+                    } else if (!e.isUpdated) {
+                        // Jika belum diinput retur, anggap belum ada tagihan tapi butuh perhatian
+                        hasPending = true;
+                    }
                 });
                 if(hasPending) {
                     totalM += m;
                     const row = document.createElement('div');
                     row.className = "bg-white p-2 border-l-2 border-red-500 flex justify-between items-center text-[10px] active:scale-[0.98] transition cursor-pointer rounded-sm shadow-sm";
                     row.onclick = () => openDetail(s.id, s.name);
-                    row.innerHTML = `<div><span class="font-black text-gray-700 uppercase italic">${s.name}</span></div><span class="font-black text-red-600 italic">${formatMoney(m)}</span>`;
+                    row.innerHTML = `<div><span class="font-black text-gray-700 uppercase italic">${s.name}</span></div><span class="font-black text-red-600 italic">${m > 0 ? formatMoney(m) : 'INPUT RETUR'}</span>`;
                     list.appendChild(row);
                 }
             });
@@ -247,13 +259,12 @@
         }
 
         function openDetail(id, name) {
-            activeSalesId = id; document.getElementById('detail-name').value = name;
+            activeSalesId = id;
+            document.getElementById('detail-name').value = name;
             document.getElementById('main-view').classList.add('hidden');
+            document.getElementById('stats-view').classList.add('hidden');
             document.getElementById('sales-detail').classList.remove('hidden');
             document.getElementById('input-date').value = new Date(new Date().getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0, 16);
-            const entries = salesData[activeSalesId] || [];
-            const pendingCount = entries.filter(e => !e.isPaid).length;
-            document.getElementById('merge-container').classList.toggle('hidden', pendingCount < 2);
             renderHistory();
         }
 
@@ -263,14 +274,65 @@
             renderDashboard();
         }
 
+        function updateSalesName() {
+            const newName = document.getElementById('detail-name').value;
+            if(!newName) return;
+            const idx = salesList.findIndex(s => s.id === activeSalesId);
+            if(idx !== -1) {
+                salesList[idx].name = newName;
+                save();
+            }
+        }
+
+        function deleteSales() {
+            if(confirm("Hapus sales ini dan seluruh datanya?")) {
+                salesList = salesList.filter(s => s.id !== activeSalesId);
+                delete salesData[activeSalesId];
+                save();
+                closeDetail();
+            }
+        }
+
+        function showAddSalesModal() {
+            const name = prompt("Masukkan Nama Sales Baru:");
+            if(name) {
+                const newId = Date.now();
+                salesList.push({id: newId, name: name});
+                save();
+                renderDashboard();
+            }
+        }
+
         function saveNewEntry() {
-            const bk = parseInt(document.getElementById('input-ball-kecil').value)||0, pk = parseInt(document.getElementById('input-pack-kecil').value)||0;
-            const bb = parseInt(document.getElementById('input-ball-besar').value)||0, bj = parseInt(document.getElementById('input-biji-besar').value)||0;
-            const tk = (bk*5)+pk, tb = (bb*25)+bj, dt = document.getElementById('input-date').value;
-            if(!tk && !tb) return;
+            const bk = parseInt(document.getElementById('input-ball-kecil').value)||0;
+            const pk = parseInt(document.getElementById('input-pack-kecil').value)||0;
+            const bb = parseInt(document.getElementById('input-ball-besar').value)||0;
+            const bj = parseInt(document.getElementById('input-biji-besar').value)||0;
+            const tk = (bk*5)+pk;
+            const tb = (bb*25)+bj;
+            const dt = document.getElementById('input-date').value;
+            
+            if(tk === 0 && tb === 0) return;
+            
             if(!salesData[activeSalesId]) salesData[activeSalesId] = [];
-            salesData[activeSalesId].push({ id: 'e'+Date.now(), date: dt, stokKecilTotal: tk, stokBesarTotal: tb, sisaKecil: 0, sisaBesar: 0, isPaid: false, isUpdated: false });
-            save(); openDetail(activeSalesId, document.getElementById('detail-name').value);
+            salesData[activeSalesId].push({ 
+                id: 'e'+Date.now(), 
+                date: dt, 
+                stokKecilTotal: tk, 
+                stokBesarTotal: tb, 
+                sisaKecil: 0, 
+                sisaBesar: 0, 
+                isPaid: false, 
+                isUpdated: false 
+            });
+            
+            save();
+            // Reset input
+            document.getElementById('input-ball-kecil').value = '';
+            document.getElementById('input-pack-kecil').value = '';
+            document.getElementById('input-ball-besar').value = '';
+            document.getElementById('input-biji-besar').value = '';
+            renderHistory();
         }
 
         function renderHistory() {
@@ -279,30 +341,62 @@
             fullList.innerHTML = ''; miniList.innerHTML = '';
             const ens = salesData[activeSalesId] || [];
             const sortedEns = [...ens].sort((a,b) => new Date(b.date) - new Date(a.date));
+            
             sortedEns.forEach(e => {
-                const r = calc(e); const dt = new Date(e.date).toLocaleString('id-ID',{day:'2-digit',month:'short'});
+                const r = calc(e); 
+                const dt = new Date(e.date).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
                 if (e.isPaid) {
                     const note = document.createElement('div'); note.className = "mini-note";
                     note.innerHTML = `<span>${dt}</span><div class="flex items-center gap-3"><span class="text-indigo-600">${formatMoney(r.netto)}</span><button onclick="delEntry('${e.id}'); event.stopPropagation();" class="text-gray-300">✕</button></div>`;
                     miniList.appendChild(note);
                 } else {
-                    const d = document.createElement('div'); d.className = "card p-3 border-l-4 border-orange-400";
-                    d.innerHTML = `<div class="flex justify-between items-center mb-1"><span class="text-[9px] font-bold text-gray-400 italic">${dt}</span><button onclick="delEntry('${e.id}')" class="text-gray-300">✕</button></div><button onclick="openReturModal('${e.id}')" class="w-full bg-orange-600 text-white p-2.5 rounded text-[9px] font-black uppercase italic">Input Retur & Selesaikan</button>`;
+                    const d = document.createElement('div'); d.className = "card p-3 border-l-4 border-orange-400 mb-2";
+                    const statusText = e.isUpdated ? `<p class="text-[10px] font-bold text-red-500 mb-2">Tagihan: ${formatMoney(r.netto)}</p>` : `<p class="text-[8px] text-gray-400 mb-2 italic">Belum ada input retur</p>`;
+                    d.innerHTML = `
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[9px] font-bold text-gray-400 italic">${dt}</span>
+                            <button onclick="delEntry('${e.id}')" class="text-gray-300">✕</button>
+                        </div>
+                        <div class="text-[9px] mb-2 text-gray-600">Ambil: K=${formatUnitDetailed(e.stokKecilTotal,5,'Pak')} | B=${formatUnitDetailed(e.stokBesarTotal,25,'Biji')}</div>
+                        ${statusText}
+                        <button onclick="openReturModal('${e.id}')" class="w-full bg-orange-600 text-white p-2.5 rounded text-[9px] font-black uppercase italic">${e.isUpdated ? 'Ubah Retur / Bayar' : 'Input Retur & Selesaikan'}</button>
+                    `;
                     fullList.appendChild(d);
                 }
             });
         }
 
         function openReturModal(eid) {
-            isMerging = false; activeEntryId = eid;
+            activeEntryId = eid;
             const e = salesData[activeSalesId].find(x=>x.id===eid);
             document.getElementById('modal-retur-desc').innerText = `K: ${formatUnitDetailed(e.stokKecilTotal, 5, 'Pak')} | B: ${formatUnitDetailed(e.stokBesarTotal, 25, 'Biji')}`;
+            
+            // Set default value dari data lama jika ada
+            const k_ball = Math.floor(e.sisaKecil / 5);
+            const k_pack = e.sisaKecil % 5;
+            const b_ball = Math.floor(e.sisaBesar / 25);
+            const b_biji = e.sisaBesar % 25;
+
+            document.getElementById('update-ball-kecil').value = k_ball || '';
+            document.getElementById('update-pack-kecil').value = k_pack || '';
+            document.getElementById('update-ball-besar').value = b_ball || '';
+            document.getElementById('update-biji-besar').value = b_biji || '';
+            document.getElementById('update-paid').checked = e.isPaid;
+            
+            calcReturKecil();
+            calcReturBesar();
             document.getElementById('modal-retur').classList.remove('hidden');
         }
 
         function hideReturModal() { document.getElementById('modal-retur').classList.add('hidden'); }
-        function calcReturKecil() { const k=parseInt(document.getElementById('update-ball-kecil').value)||0, p=parseInt(document.getElementById('update-pack-kecil').value)||0; document.getElementById('total-pack-label').innerText = (k*5)+p; }
-        function calcReturBesar() { const k=parseInt(document.getElementById('update-ball-besar').value)||0, b=parseInt(document.getElementById('update-biji-besar').value)||0; document.getElementById('total-biji-label').innerText = (k*25)+b; }
+        function calcReturKecil() { 
+            const k=parseInt(document.getElementById('update-ball-kecil').value)||0, p=parseInt(document.getElementById('update-pack-kecil').value)||0; 
+            document.getElementById('total-pack-label').innerText = (k*5)+p; 
+        }
+        function calcReturBesar() { 
+            const k=parseInt(document.getElementById('update-ball-besar').value)||0, b=parseInt(document.getElementById('update-biji-besar').value)||0; 
+            document.getElementById('total-biji-label').innerText = (k*25)+b; 
+        }
 
         function confirmUpdateRetur() {
             const idx = salesData[activeSalesId].findIndex(x=>x.id===activeEntryId);
@@ -312,12 +406,94 @@
                 salesData[activeSalesId][idx].isPaid = document.getElementById('update-paid').checked;
                 salesData[activeSalesId][idx].isUpdated = true;
             }
-            save(); openDetail(activeSalesId, document.getElementById('detail-name').value); hideReturModal(); updatePendingList();
+            save(); 
+            renderHistory(); 
+            hideReturModal(); 
+            updatePendingList();
         }
 
-        function delEntry(eid) { if(confirm("Hapus?")) { salesData[activeSalesId] = salesData[activeSalesId].filter(x=>x.id!==eid); save(); renderHistory(); updatePendingList(); } }
+        function delEntry(eid) { if(confirm("Hapus riwayat ini?")) { salesData[activeSalesId] = salesData[activeSalesId].filter(x=>x.id!==eid); save(); renderHistory(); updatePendingList(); } }
 
-        // PWA SERVICE WORKER REGISTRATION
+        function showStats() {
+            document.getElementById('main-view').classList.add('hidden');
+            document.getElementById('sales-detail').classList.add('hidden');
+            document.getElementById('stats-view').classList.remove('hidden');
+            renderStats();
+        }
+
+        function hideStats() {
+            document.getElementById('stats-view').classList.add('hidden');
+            document.getElementById('main-view').classList.remove('hidden');
+        }
+
+        function renderStats() {
+            const filter = document.getElementById('stats-month-filter').value;
+            const container = document.getElementById('stats-content');
+            container.innerHTML = '';
+            
+            let grandBruto = 0, grandKomisi = 0, grandNetto = 0;
+            
+            salesList.forEach(s => {
+                const entries = salesData[s.id] || [];
+                let sBruto = 0, sKomisi = 0, sNetto = 0;
+                
+                entries.forEach(e => {
+                    if(e.date.startsWith(filter) && e.isUpdated) {
+                        const r = calc(e);
+                        sBruto += r.bruto; sKomisi += r.komisi; sNetto += r.netto;
+                    }
+                });
+                
+                if(sBruto > 0) {
+                    grandBruto += sBruto; grandKomisi += sKomisi; grandNetto += sNetto;
+                    const card = document.createElement('div');
+                    card.className = "card p-3 border-l-4 border-indigo-500";
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-black text-gray-700 uppercase italic">${s.name}</span>
+                            <span class="text-xs font-bold text-indigo-600">${formatMoney(sNetto)}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-[9px] font-bold text-gray-400 uppercase">
+                            <div>Bruto: ${formatMoney(sBruto)}</div>
+                            <div>Komisi: ${formatMoney(sKomisi)}</div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+            });
+            
+            const summary = document.createElement('div');
+            summary.className = "bg-indigo-600 text-white p-4 rounded-xl shadow-lg italic";
+            summary.innerHTML = `
+                <p class="text-[10px] font-bold uppercase opacity-80 mb-1">Total Netto Keseluruhan</p>
+                <p class="text-xl font-black mb-3">${formatMoney(grandNetto)}</p>
+                <div class="grid grid-cols-2 gap-2 text-[10px] border-t border-white/20 pt-2 opacity-90">
+                    <div>Total Bruto: <br>${formatMoney(grandBruto)}</div>
+                    <div>Total Komisi: <br>${formatMoney(grandKomisi)}</div>
+                </div>
+            `;
+            container.prepend(summary);
+            
+            if(container.children.length === 1) {
+                container.innerHTML = `<div class="text-center py-10 text-gray-400 text-xs font-bold uppercase italic">Tidak ada data di bulan ini</div>`;
+            }
+        }
+
+        function triggerSecretReset() {
+            secretClicks++;
+            if(secretClicks >= 5) {
+                document.getElementById('secret-reset-area').classList.remove('hidden');
+            }
+        }
+
+        function clearAllData() {
+            if(confirm("HAPUS SEMUA DATA PERMANEN?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `self.addEventListener('fetch', function(e) { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });`;
