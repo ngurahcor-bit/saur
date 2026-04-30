@@ -2,18 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Saur Admin - Manajemen Sales</title>
-    
-    <!-- PWA Meta Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="SaurAdmin">
-    <meta name="theme-color" content="#4f46e5">
-    
-    <!-- Link Manifest (Inline Data URI agar tetap satu file) -->
-    <link rel="manifest" href='data:application/json,{"name":"Saur Admin","short_name":"SaurAdmin","start_url":".","display":"standalone","background_color":"#f8fafc","theme_color":"#4f46e5","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/3144/3144456.png","sizes":"512x512","type":"image/png"}]}'>
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -22,7 +12,6 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
         }
         .card {
             background: white;
@@ -32,6 +21,11 @@
         .input-focus:focus {
             outline: none;
             border-bottom: 2px solid #4f46e5;
+        }
+        #capture-area {
+            padding: 20px;
+            background: white;
+            width: 320px;
         }
         .mini-note {
             background: white;
@@ -48,13 +42,9 @@
             cursor: pointer;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        button, .clickable {
-            min-height: 44px;
-            min-width: 44px;
-        }
     </style>
 </head>
-<body class="p-3 md:p-6 pb-20">
+<body class="p-3 md:p-6">
 
     <div id="app" class="max-w-md mx-auto">
         <!-- Header -->
@@ -86,7 +76,7 @@
             <div id="sales-list" class="grid grid-cols-4 gap-3 mb-8"></div>
         </div>
 
-        <!-- Statistik -->
+        <!-- Tampilan Statistik -->
         <div id="stats-view" class="hidden">
             <button onclick="hideStats()" class="mb-4 text-indigo-600 text-xs font-bold flex items-center uppercase italic">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg> Kembali
@@ -95,10 +85,10 @@
                 <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Filter Bulan</label>
                 <input type="month" id="stats-month-filter" onchange="renderStats()" class="w-full p-2 border rounded-md text-sm outline-none">
             </div>
-            <div id="stats-content" class="space-y-4"></div>
+            <div id="stats-content"></div>
         </div>
 
-        <!-- Detail Sales -->
+        <!-- Bagian Detail Sales -->
         <div id="sales-detail" class="hidden pb-10">
             <div class="flex justify-between items-center mb-4">
                 <button onclick="closeDetail()" class="text-indigo-600 font-bold text-sm flex items-center italic">
@@ -108,7 +98,7 @@
             </div>
             
             <div id="input-section" class="card p-4 mb-5 border-t-4 border-indigo-600">
-                <input type="text" id="detail-name" onchange="updateSalesName()" class="text-lg font-black text-gray-800 uppercase w-full input-focus mb-3 italic" placeholder="Nama Sales">
+                <input type="text" id="detail-name" class="text-lg font-black text-gray-800 uppercase w-full input-focus mb-3 italic" placeholder="Nama Sales">
                 <div class="space-y-3">
                     <input type="datetime-local" id="input-date" class="w-full p-2 border rounded text-xs outline-none bg-gray-50">
                     <div class="grid grid-cols-2 gap-2">
@@ -131,24 +121,35 @@
                 </div>
             </div>
 
-            <h2 class="text-[10px] font-black text-gray-400 mb-3 uppercase italic border-b pb-1">RIWAYAT AKTIF</h2>
+            <!-- TOMBOL GABUNG -->
+            <div id="merge-container" class="hidden mb-5">
+                <button onclick="initMerge()" class="w-full bg-emerald-600 text-white p-3 rounded-xl font-black text-xs shadow-lg uppercase italic flex items-center justify-center gap-2 animate-pulse">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                    Gabung & Bereskan Semua Pending
+                </button>
+            </div>
+
+            <h2 class="text-[10px] font-black text-gray-400 mb-3 flex items-center uppercase italic border-b pb-1">RIWAYAT TRANSAKSI AKTIF</h2>
+            
             <div id="history-list" class="space-y-3"></div>
             <div class="mt-8 border-t pt-4">
-                <h3 class="text-[9px] font-black text-gray-300 uppercase italic mb-3">Selesai (Lunas)</h3>
+                <h3 class="text-[9px] font-black text-gray-300 uppercase italic mb-3">Transaksi Selesai (Lunas)</h3>
                 <div id="mini-history-list" class="space-y-1"></div>
             </div>
         </div>
 
+        <!-- Tombol Reset Database -->
         <div id="secret-reset-area" class="hidden p-4 mt-10 border-2 border-dashed border-red-100 text-center rounded-xl">
             <button onclick="clearAllData()" class="bg-red-500 text-white text-[10px] font-bold px-4 py-2 rounded uppercase italic">Reset Database</button>
         </div>
     </div>
 
-    <!-- Modals -->
+    <!-- Modal Update Retur -->
     <div id="modal-retur" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[100] backdrop-blur-sm">
         <div class="bg-white rounded-xl p-5 w-full max-w-xs shadow-2xl">
             <h3 id="modal-retur-title" class="text-sm font-black text-gray-800 uppercase italic mb-1">Input Retur</h3>
             <p id="modal-retur-desc" class="text-[9px] text-gray-400 font-bold mb-4 uppercase"></p>
+            
             <div class="space-y-4">
                 <div class="bg-indigo-50 p-3 rounded">
                     <p class="text-[9px] font-bold text-indigo-400 uppercase mb-2">Retur Kecil</p>
@@ -171,36 +172,108 @@
                     <label for="update-paid" class="text-xs font-bold text-gray-600">Sudah Dibayar (Lunas)</label>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="confirmUpdateRetur()" class="flex-1 bg-indigo-600 text-white p-2 rounded font-bold text-xs uppercase italic">SIMPAN</button>
+                    <button id="btn-confirm-retur" onclick="confirmUpdateRetur()" class="flex-1 bg-indigo-600 text-white p-2 rounded font-bold text-xs uppercase italic">SIMPAN</button>
                     <button onclick="hideReturModal()" class="flex-1 bg-gray-100 text-gray-500 p-2 rounded font-bold text-xs uppercase italic">BATAL</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Modal Detail Selesai & Share -->
+    <div id="modal-history-detail" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[110] backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-5 w-full max-w-xs shadow-2xl">
+            <h3 id="hist-title" class="text-sm font-black text-gray-800 uppercase italic mb-1">Rincian Transaksi</h3>
+            <p id="hist-date" class="text-[9px] text-gray-400 font-bold mb-4 uppercase"></p>
+            
+            <div id="hist-content" class="space-y-2 mb-4"></div>
+            
+            <div class="border-t pt-3 mb-4">
+                <div class="flex justify-between items-center px-1">
+                    <span class="text-[10px] font-black text-gray-400 italic uppercase">Total Setoran:</span>
+                    <span id="hist-netto" class="text-sm font-black text-emerald-600 italic"></span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <button id="btn-hist-text" class="bg-indigo-600 text-white p-2 rounded font-bold text-[10px] uppercase italic">Salin Teks</button>
+                <button id="btn-hist-img" class="bg-sky-500 text-white p-2 rounded font-bold text-[10px] uppercase italic">Unduh Gambar</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <button id="btn-hist-edit" class="bg-orange-100 text-orange-600 p-2 rounded font-bold text-[10px] uppercase italic">Ubah Data</button>
+                <button onclick="hideHistoryDetail()" class="bg-gray-100 text-gray-500 p-2 rounded font-bold text-[10px] uppercase italic">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canvas Area untuk Ekspor Gambar -->
+    <div style="position: absolute; left: -9999px;">
+        <div id="capture-area">
+            <div style="text-align:center; margin-bottom: 20px; border-bottom: 2px dashed #6366f1; padding-bottom: 10px;">
+                <p style="font-weight:900; font-size: 18px; color:#312e81; margin:0;">LAPORAN SAUR</p>
+                <p id="ss-sales-name" style="font-weight:700; margin:5px 0;"></p>
+                <p id="ss-date" style="font-size:10px; color:#6b7280;"></p>
+            </div>
+            <div style="background:#f5f3ff; padding:10px; border-radius:10px; margin-bottom: 10px;">
+                <p style="font-size:10px; font-weight:900; color:#818cf8; margin-bottom:5px;">PENGAMBILAN BARANG</p>
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px;"><span>KECIL:</span><span id="ss-ambil-kecil" style="font-weight:800;"></span></div>
+                <div style="display:flex; justify-content:space-between; font-size:12px;"><span>BESAR:</span><span id="ss-ambil-besar" style="font-weight:800;"></span></div>
+            </div>
+            <div style="background:#fff7ed; padding:10px; border-radius:10px; margin-bottom: 10px;">
+                <p style="font-size:10px; font-weight:900; color:#fb923c; margin-bottom:5px;">SISA (RETUR)</p>
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px;"><span>KECIL:</span><span id="ss-retur-kecil" style="font-weight:800;"></span></div>
+                <div style="display:flex; justify-content:space-between; font-size:12px;"><span>BESAR:</span><span id="ss-retur-besar" style="font-weight:800;"></span></div>
+            </div>
+            <div style="background:#f0fdf4; padding:10px; border-radius:10px; margin-bottom: 15px;">
+                <p style="font-size:10px; font-weight:900; color:#22c55e; margin-bottom:5px;">LAKU (TERJUAL)</p>
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px;"><span>KECIL:</span><span id="ss-laku-kecil" style="font-weight:800;"></span></div>
+                <div style="display:flex; justify-content:space-between; font-size:12px;"><span>BESAR:</span><span id="ss-laku-besar" style="font-weight:800;"></span></div>
+            </div>
+            <div style="padding:0 5px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px; color:#6b7280; font-style:italic;"><span>Bruto:</span><span id="ss-bruto"></span></div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; color:#818cf8; font-style:italic;"><span>Komisi 10%:</span><span id="ss-komisi"></span></div>
+                <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:900; color:#4f46e5; border-top:1.5px solid #4f46e5; margin-top:10px; padding-top:5px;"><span>SETORAN:</span><span id="ss-netto"></span></div>
+            </div>
+            <div style="text-align:center; margin-top:20px;"><span id="ss-status" style="padding:5px 15px; border-radius:20px; font-size:10px; font-weight:900;"></span></div>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Sales Baru -->
+    <div id="modal-sales" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl p-5 w-full max-w-xs shadow-xl">
+            <h3 class="text-sm font-black text-gray-800 uppercase italic mb-3">Tambah Sales</h3>
+            <input type="text" id="new-sales-name" placeholder="Nama Lengkap" class="w-full p-2 border rounded mb-4 text-sm outline-none">
+            <div class="flex gap-2">
+                <button onclick="addSales()" class="flex-1 bg-indigo-600 text-white p-2 rounded text-xs font-bold italic uppercase">Tambah</button>
+                <button onclick="hideModal()" class="flex-1 bg-gray-100 p-2 rounded text-xs font-bold text-gray-500 italic uppercase">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-full text-[9px] font-black uppercase opacity-0 pointer-events-none transition-all duration-300 z-[200]"></div>
+
     <script>
         const SALES_KEY = 'saur_sales';
         const DATA_KEY = 'saur_data';
-        let salesList = [], salesData = {}, activeSalesId = null, activeEntryId = null, secretClicks = 0;
+        let salesList = [], salesData = {}, activeSalesId = null, activeEntryId = null, clicks = 0;
+        let isMerging = false;
 
         function load() {
             salesList = JSON.parse(localStorage.getItem(SALES_KEY)) || [{id:1, name:'Sales A'}];
             salesData = JSON.parse(localStorage.getItem(DATA_KEY)) || {};
-            // Set filter bulan statistik ke bulan ini sebagai default
-            const now = new Date();
-            document.getElementById('stats-month-filter').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         }
-
         function save() {
             localStorage.setItem(SALES_KEY, JSON.stringify(salesList));
             localStorage.setItem(DATA_KEY, JSON.stringify(salesData));
         }
-
         function formatMoney(num) { return "Rp " + Math.round(num || 0).toLocaleString('id-ID'); }
-
+        
         function formatUnitDetailed(total, per, unitName) {
-            const k = Math.floor(total / per); const u = total % per;
-            let parts = []; if (k > 0) parts.push(`${k} Krsk`); if (u > 0) parts.push(`${u} ${unitName}`);
+            const k = Math.floor(total / per);
+            const u = total % per;
+            let parts = [];
+            if (k > 0) parts.push(`${k} Krsk`);
+            if (u > 0) parts.push(`${u} ${unitName}`);
             return parts.length ? parts.join(' ') : `0 ${unitName}`;
         }
 
@@ -219,41 +292,48 @@
                 const d = document.createElement('div');
                 d.className = "flex flex-col items-center cursor-pointer";
                 d.onclick = () => openDetail(s.id, s.name);
-                d.innerHTML = `
-                    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center border-2 border-indigo-50 shadow-sm active:scale-90 transition font-black text-indigo-600 text-lg">
-                        ${s.name[0].toUpperCase()}
-                    </div>
-                    <span class="mt-1 text-[8px] font-black text-gray-500 uppercase truncate w-full text-center">${s.name}</span>
-                `;
+                d.innerHTML = `<div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center border-2 border-indigo-50 shadow-sm active:scale-90 transition font-black text-indigo-600 text-lg">${s.name[0].toUpperCase()}</div><span class="mt-1 text-[8px] font-black text-gray-500 uppercase truncate w-full text-center">${s.name}</span>`;
                 listEl.appendChild(d);
             });
             updatePendingList();
         }
 
+        // PERBAIKAN: Fungsi ini sekarang memfilter isPaid agar tidak muncul di Saldo Pending
         function updatePendingList() {
             const list = document.getElementById('sales-receivable-list');
             list.innerHTML = '';
             let totalM = 0;
+
             salesList.forEach(s => {
                 const entries = salesData[s.id] || [];
-                let m = 0, hasPending = false;
+                let m = 0, totalK = 0, totalB = 0, hasPending = false;
+                
+                // Hanya hitung jika isPaid adalah false
                 entries.forEach(e => { 
-                    if(!e.isPaid && e.isUpdated) { 
-                        m += calc(e).netto; hasPending = true;
-                    } else if (!e.isUpdated) {
-                        // Jika belum diinput retur, anggap belum ada tagihan tapi butuh perhatian
+                    if(!e.isPaid) { 
+                        m += calc(e).netto; 
+                        totalK += e.stokKecilTotal;
+                        totalB += e.stokBesarTotal;
                         hasPending = true;
-                    }
+                    } 
                 });
+                
                 if(hasPending) {
                     totalM += m;
                     const row = document.createElement('div');
                     row.className = "bg-white p-2 border-l-2 border-red-500 flex justify-between items-center text-[10px] active:scale-[0.98] transition cursor-pointer rounded-sm shadow-sm";
                     row.onclick = () => openDetail(s.id, s.name);
-                    row.innerHTML = `<div><span class="font-black text-gray-700 uppercase italic">${s.name}</span></div><span class="font-black text-red-600 italic">${m > 0 ? formatMoney(m) : 'INPUT RETUR'}</span>`;
+                    row.innerHTML = `
+                        <div class="flex flex-col">
+                            <span class="font-black text-gray-700 uppercase italic">${s.name}</span>
+                            <span class="text-[8px] text-gray-400 font-bold">K: ${formatUnitDetailed(totalK, 5, 'Pak')} | B: ${formatUnitDetailed(totalB, 25, 'Biji')}</span>
+                        </div>
+                        <span class="font-black text-red-600 italic">${formatMoney(m)}</span>
+                    `;
                     list.appendChild(row);
                 }
             });
+
             if(!list.innerHTML) list.innerHTML = `<div class="text-center py-2 text-[8px] font-bold text-gray-300 uppercase italic">SEMUA LUNAS</div>`;
             document.getElementById('total-summary-mini').innerText = formatMoney(totalM);
         }
@@ -262,10 +342,14 @@
             activeSalesId = id;
             document.getElementById('detail-name').value = name;
             document.getElementById('main-view').classList.add('hidden');
-            document.getElementById('stats-view').classList.add('hidden');
             document.getElementById('sales-detail').classList.remove('hidden');
             document.getElementById('input-date').value = new Date(new Date().getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0, 16);
-            renderHistory();
+            
+            const entries = salesData[activeSalesId] || [];
+            const pendingCount = entries.filter(e => !e.isPaid).length;
+            document.getElementById('merge-container').classList.toggle('hidden', pendingCount < 2);
+            
+            resetForm(); renderHistory();
         }
 
         function closeDetail() {
@@ -274,236 +358,275 @@
             renderDashboard();
         }
 
-        function updateSalesName() {
-            const newName = document.getElementById('detail-name').value;
-            if(!newName) return;
-            const idx = salesList.findIndex(s => s.id === activeSalesId);
-            if(idx !== -1) {
-                salesList[idx].name = newName;
-                save();
-            }
-        }
-
-        function deleteSales() {
-            if(confirm("Hapus sales ini dan seluruh datanya?")) {
-                salesList = salesList.filter(s => s.id !== activeSalesId);
-                delete salesData[activeSalesId];
-                save();
-                closeDetail();
-            }
-        }
-
-        function showAddSalesModal() {
-            const name = prompt("Masukkan Nama Sales Baru:");
-            if(name) {
-                const newId = Date.now();
-                salesList.push({id: newId, name: name});
-                save();
-                renderDashboard();
-            }
-        }
-
-        function saveNewEntry() {
-            const bk = parseInt(document.getElementById('input-ball-kecil').value)||0;
-            const pk = parseInt(document.getElementById('input-pack-kecil').value)||0;
-            const bb = parseInt(document.getElementById('input-ball-besar').value)||0;
-            const bj = parseInt(document.getElementById('input-biji-besar').value)||0;
-            const tk = (bk*5)+pk;
-            const tb = (bb*25)+bj;
-            const dt = document.getElementById('input-date').value;
-            
-            if(tk === 0 && tb === 0) return;
-            
-            if(!salesData[activeSalesId]) salesData[activeSalesId] = [];
-            salesData[activeSalesId].push({ 
-                id: 'e'+Date.now(), 
-                date: dt, 
-                stokKecilTotal: tk, 
-                stokBesarTotal: tb, 
-                sisaKecil: 0, 
-                sisaBesar: 0, 
-                isPaid: false, 
-                isUpdated: false 
-            });
-            
-            save();
-            // Reset input
+        function resetForm() {
             document.getElementById('input-ball-kecil').value = '';
             document.getElementById('input-pack-kecil').value = '';
             document.getElementById('input-ball-besar').value = '';
             document.getElementById('input-biji-besar').value = '';
-            renderHistory();
+        }
+
+        function saveNewEntry() {
+            const bk = parseInt(document.getElementById('input-ball-kecil').value)||0, pk = parseInt(document.getElementById('input-pack-kecil').value)||0;
+            const bb = parseInt(document.getElementById('input-ball-besar').value)||0, bj = parseInt(document.getElementById('input-biji-besar').value)||0;
+            const tk = (bk*5)+pk, tb = (bb*25)+bj, dt = document.getElementById('input-date').value;
+            if(!tk && !tb) return showToast("KOSONG!");
+            if(!salesData[activeSalesId]) salesData[activeSalesId] = [];
+            salesData[activeSalesId].push({ id: 'e'+Date.now(), date: dt, stokKecilTotal: tk, stokBesarTotal: tb, sisaKecil: 0, sisaBesar: 0, isPaid: false, isUpdated: false });
+            save(); openDetail(activeSalesId, document.getElementById('detail-name').value); showToast("OK!");
         }
 
         function renderHistory() {
             const fullList = document.getElementById('history-list');
             const miniList = document.getElementById('mini-history-list');
-            fullList.innerHTML = ''; miniList.innerHTML = '';
+            fullList.innerHTML = '';
+            miniList.innerHTML = '';
+            
             const ens = salesData[activeSalesId] || [];
             const sortedEns = [...ens].sort((a,b) => new Date(b.date) - new Date(a.date));
-            
+
             sortedEns.forEach(e => {
-                const r = calc(e); 
-                const dt = new Date(e.date).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+                const r = calc(e);
+                const dt = new Date(e.date).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'2-digit'});
+                
                 if (e.isPaid) {
-                    const note = document.createElement('div'); note.className = "mini-note";
-                    note.innerHTML = `<span>${dt}</span><div class="flex items-center gap-3"><span class="text-indigo-600">${formatMoney(r.netto)}</span><button onclick="delEntry('${e.id}'); event.stopPropagation();" class="text-gray-300">✕</button></div>`;
+                    const note = document.createElement('div');
+                    note.className = "mini-note";
+                    note.innerHTML = `
+                        <div class="flex items-center gap-2">
+                             <span>${dt}</span>
+                             <span class="text-[7px] opacity-60 italic">${e.isMerged ? '[GABUNGAN]' : ''}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-indigo-600">${formatMoney(r.netto)}</span>
+                            <button onclick="delEntry('${e.id}'); event.stopPropagation();" class="text-gray-300 hover:text-red-400 p-1">✕</button>
+                        </div>
+                    `;
+                    note.onclick = () => showHistoryDetail(e);
                     miniList.appendChild(note);
-                } else {
-                    const d = document.createElement('div'); d.className = "card p-3 border-l-4 border-orange-400 mb-2";
-                    const statusText = e.isUpdated ? `<p class="text-[10px] font-bold text-red-500 mb-2">Tagihan: ${formatMoney(r.netto)}</p>` : `<p class="text-[8px] text-gray-400 mb-2 italic">Belum ada input retur</p>`;
+                } 
+                else {
+                    const d = document.createElement('div');
+                    d.className = `card p-3 border-l-4 ${e.isUpdated ? 'border-indigo-400' : 'border-orange-400'}`;
+                    
+                    const ambilK = formatUnitDetailed(e.stokKecilTotal, 5, 'Pak');
+                    const ambilB = formatUnitDetailed(e.stokBesarTotal, 25, 'Biji');
+                    const returK = e.isUpdated ? formatUnitDetailed(e.sisaKecil, 5, 'Pak') : '-';
+                    const returB = e.isUpdated ? formatUnitDetailed(e.sisaBesar, 25, 'Biji') : '-';
+
                     d.innerHTML = `
                         <div class="flex justify-between items-center mb-1">
-                            <span class="text-[9px] font-bold text-gray-400 italic">${dt}</span>
-                            <button onclick="delEntry('${e.id}')" class="text-gray-300">✕</button>
+                            <span class="text-[9px] font-bold text-gray-400 uppercase italic">
+                                ${new Date(e.date).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'})}
+                            </span>
+                            <button onclick="delEntry('${e.id}')" class="text-gray-300 text-xs">✕</button>
                         </div>
-                        <div class="text-[9px] mb-2 text-gray-600">Ambil: K=${formatUnitDetailed(e.stokKecilTotal,5,'Pak')} | B=${formatUnitDetailed(e.stokBesarTotal,25,'Biji')}</div>
-                        ${statusText}
-                        <button onclick="openReturModal('${e.id}')" class="w-full bg-orange-600 text-white p-2.5 rounded text-[9px] font-black uppercase italic">${e.isUpdated ? 'Ubah Retur / Bayar' : 'Input Retur & Selesaikan'}</button>
+                        <div class="grid grid-cols-2 text-[9px] mb-2 gap-2">
+                            <div class="bg-gray-50 p-1.5 rounded border border-gray-100">
+                                <span class="text-[8px] font-bold text-gray-400 uppercase block mb-1">AMBIL:</span>
+                                <span class="text-gray-700 font-bold block leading-none">K: ${ambilK}</span>
+                                <span class="text-gray-700 font-bold block leading-none">B: ${ambilB}</span>
+                            </div>
+                            <div class="bg-indigo-50 p-1.5 rounded border border-indigo-100">
+                                <span class="text-[8px] font-bold text-indigo-400 uppercase block mb-1">RETUR:</span>
+                                <span class="text-indigo-600 font-bold block leading-none">K: ${returK}</span>
+                                <span class="text-indigo-600 font-bold block leading-none">B: ${returB}</span>
+                            </div>
+                        </div>
+                        ${e.isUpdated ? `
+                        <div class="bg-indigo-50 p-2 rounded mb-2 space-y-1">
+                            <div class="flex justify-between text-[9px] text-gray-400 font-bold px-1"><span>Bruto:</span><span>${formatMoney(r.bruto)}</span></div>
+                            <div class="flex justify-between text-[9px] text-indigo-400 font-bold px-1"><span>Komisi 10%:</span><span>${formatMoney(r.komisi)}</span></div>
+                            <div class="flex justify-between text-[11px] font-black text-indigo-700 italic px-1 pt-1 border-t border-indigo-100">
+                                <span>SETORAN:</span><span>${formatMoney(r.netto)}</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1">
+                            <button onclick="openReturModal('${e.id}')" class="bg-gray-100 p-1.5 rounded text-[8px] font-bold uppercase italic text-gray-600">Ubah</button>
+                            <button onclick="share('${e.id}','text')" class="bg-indigo-600 text-white p-1.5 rounded text-[8px] font-bold uppercase italic">Salin</button>
+                            <button onclick="share('${e.id}','img')" class="bg-sky-500 text-white p-1.5 rounded text-[8px] font-bold uppercase italic">Gambar</button>
+                        </div>` : `<button onclick="openReturModal('${e.id}')" class="w-full bg-orange-600 text-white p-2.5 rounded text-[9px] font-black uppercase italic shadow-md">Input Retur & Bereskan</button>`}
                     `;
                     fullList.appendChild(d);
                 }
             });
         }
 
-        function openReturModal(eid) {
-            activeEntryId = eid;
-            const e = salesData[activeSalesId].find(x=>x.id===eid);
-            document.getElementById('modal-retur-desc').innerText = `K: ${formatUnitDetailed(e.stokKecilTotal, 5, 'Pak')} | B: ${formatUnitDetailed(e.stokBesarTotal, 25, 'Biji')}`;
+        function showHistoryDetail(e) {
+            const r = calc(e);
+            document.getElementById('hist-title').innerText = e.isMerged ? "RINCIAN GABUNGAN" : "RINCIAN TRANSAKSI";
+            document.getElementById('hist-date').innerText = "TGL: " + new Date(e.date).toLocaleString('id-ID');
+            document.getElementById('hist-netto').innerText = formatMoney(r.netto);
             
-            // Set default value dari data lama jika ada
-            const k_ball = Math.floor(e.sisaKecil / 5);
-            const k_pack = e.sisaKecil % 5;
-            const b_ball = Math.floor(e.sisaBesar / 25);
-            const b_biji = e.sisaBesar % 25;
+            const content = document.getElementById('hist-content');
+            content.innerHTML = `
+                <div class="grid grid-cols-2 gap-2 text-[10px]">
+                    <div class="p-2 bg-gray-50 rounded">
+                        <span class="block font-bold text-gray-400 uppercase text-[8px]">Ambil:</span>
+                        <b>K:</b> ${formatUnitDetailed(e.stokKecilTotal, 5, 'Pak')}<br>
+                        <b>B:</b> ${formatUnitDetailed(e.stokBesarTotal, 25, 'Biji')}
+                    </div>
+                    <div class="p-2 bg-indigo-50 rounded">
+                        <span class="block font-bold text-indigo-400 uppercase text-[8px]">Retur:</span>
+                        <b>K:</b> ${formatUnitDetailed(e.sisaKecil, 5, 'Pak')}<br>
+                        <b>B:</b> ${formatUnitDetailed(e.sisaBesar, 25, 'Biji')}
+                    </div>
+                </div>
+            `;
 
-            document.getElementById('update-ball-kecil').value = k_ball || '';
-            document.getElementById('update-pack-kecil').value = k_pack || '';
-            document.getElementById('update-ball-besar').value = b_ball || '';
-            document.getElementById('update-biji-besar').value = b_biji || '';
-            document.getElementById('update-paid').checked = e.isPaid;
-            
-            calcReturKecil();
-            calcReturBesar();
+            document.getElementById('btn-hist-text').onclick = () => share(e.id, 'text');
+            document.getElementById('btn-hist-img').onclick = () => share(e.id, 'img');
+            document.getElementById('btn-hist-edit').onclick = () => { hideHistoryDetail(); openReturModal(e.id); };
+
+            document.getElementById('modal-history-detail').classList.remove('hidden');
+        }
+
+        function hideHistoryDetail() { document.getElementById('modal-history-detail').classList.add('hidden'); }
+
+        function initMerge() {
+            const entries = salesData[activeSalesId].filter(e => !e.isPaid);
+            if(entries.length === 0) return;
+            isMerging = true; activeEntryId = null;
+            const totalAmbilK = entries.reduce((a,b) => a + b.stokKecilTotal, 0);
+            const totalAmbilB = entries.reduce((a,b) => a + b.stokBesarTotal, 0);
+            document.getElementById('modal-retur-title').innerText = "GABUNG & BERESKAN";
+            document.getElementById('modal-retur-desc').innerText = `Total Ambil K: ${formatUnitDetailed(totalAmbilK,5,'Pak')} | B: ${formatUnitDetailed(totalAmbilB,25,'Biji')}`;
+            document.getElementById('update-ball-kecil').value = ''; document.getElementById('update-pack-kecil').value = '';
+            document.getElementById('update-ball-besar').value = ''; document.getElementById('update-biji-besar').value = '';
+            calcReturKecil(); calcReturBesar();
+            document.getElementById('modal-retur').classList.remove('hidden');
+        }
+
+        function openReturModal(eid) {
+            isMerging = false; activeEntryId = eid;
+            const e = salesData[activeSalesId].find(x=>x.id===eid);
+            document.getElementById('modal-retur-title').innerText = "INPUT RETUR";
+            document.getElementById('modal-retur-desc').innerText = `Ambil: K: ${formatUnitDetailed(e.stokKecilTotal, 5, 'Pak')} | B: ${formatUnitDetailed(e.stokBesarTotal, 25, 'Biji')}`;
+            if(e.isUpdated) {
+                document.getElementById('update-ball-kecil').value = Math.floor(e.sisaKecil/5);
+                document.getElementById('update-pack-kecil').value = e.sisaKecil%5;
+                document.getElementById('update-ball-besar').value = Math.floor(e.sisaBesar/25);
+                document.getElementById('update-biji-besar').value = e.sisaBesar%25;
+                document.getElementById('update-paid').checked = e.isPaid;
+            } else {
+                document.getElementById('update-ball-kecil').value = ''; document.getElementById('update-pack-kecil').value = '';
+                document.getElementById('update-ball-besar').value = ''; document.getElementById('update-biji-besar').value = '';
+                document.getElementById('update-paid').checked = true;
+            }
+            calcReturKecil(); calcReturBesar();
             document.getElementById('modal-retur').classList.remove('hidden');
         }
 
         function hideReturModal() { document.getElementById('modal-retur').classList.add('hidden'); }
-        function calcReturKecil() { 
-            const k=parseInt(document.getElementById('update-ball-kecil').value)||0, p=parseInt(document.getElementById('update-pack-kecil').value)||0; 
-            document.getElementById('total-pack-label').innerText = (k*5)+p; 
-        }
-        function calcReturBesar() { 
-            const k=parseInt(document.getElementById('update-ball-besar').value)||0, b=parseInt(document.getElementById('update-biji-besar').value)||0; 
-            document.getElementById('total-biji-label').innerText = (k*25)+b; 
-        }
+        function calcReturKecil() { const k=parseInt(document.getElementById('update-ball-kecil').value)||0, p=parseInt(document.getElementById('update-pack-kecil').value)||0; document.getElementById('total-pack-label').innerText = (k*5)+p; }
+        function calcReturBesar() { const k=parseInt(document.getElementById('update-ball-besar').value)||0, b=parseInt(document.getElementById('update-biji-besar').value)||0; document.getElementById('total-biji-label').innerText = (k*25)+b; }
 
         function confirmUpdateRetur() {
-            const idx = salesData[activeSalesId].findIndex(x=>x.id===activeEntryId);
-            if(idx!==-1) {
-                salesData[activeSalesId][idx].sisaKecil = parseInt(document.getElementById('total-pack-label').innerText);
-                salesData[activeSalesId][idx].sisaBesar = parseInt(document.getElementById('total-biji-label').innerText);
-                salesData[activeSalesId][idx].isPaid = document.getElementById('update-paid').checked;
-                salesData[activeSalesId][idx].isUpdated = true;
+            if(isMerging) {
+                const pendingEntries = salesData[activeSalesId].filter(e => !e.isPaid);
+                const totalAmbilK = pendingEntries.reduce((a,b) => a + b.stokKecilTotal, 0);
+                const totalAmbilB = pendingEntries.reduce((a,b) => a + b.stokBesarTotal, 0);
+                const sisaK = parseInt(document.getElementById('total-pack-label').innerText);
+                const sisaB = parseInt(document.getElementById('total-biji-label').innerText);
+                const isPaid = document.getElementById('update-paid').checked;
+                
+                const sourceIds = pendingEntries.map(p => ({ date: p.date, k: p.stokKecilTotal, b: p.stokBesarTotal }));
+                salesData[activeSalesId] = salesData[activeSalesId].filter(e => e.isPaid || e.isUpdated);
+                salesData[activeSalesId].push({ 
+                    id: 'm'+Date.now(), date: new Date().toISOString(), 
+                    stokKecilTotal: totalAmbilK, stokBesarTotal: totalAmbilB, 
+                    sisaKecil: sisaK, sisaBesar: sisaB, 
+                    isPaid: isPaid, isUpdated: true, isMerged: true, sources: sourceIds
+                });
+            } else {
+                const idx = salesData[activeSalesId].findIndex(x=>x.id===activeEntryId);
+                if(idx!==-1) {
+                    salesData[activeSalesId][idx].sisaKecil = parseInt(document.getElementById('total-pack-label').innerText);
+                    salesData[activeSalesId][idx].sisaBesar = parseInt(document.getElementById('total-biji-label').innerText);
+                    salesData[activeSalesId][idx].isPaid = document.getElementById('update-paid').checked;
+                    salesData[activeSalesId][idx].isUpdated = true;
+                }
             }
             save(); 
-            renderHistory(); 
+            openDetail(activeSalesId, document.getElementById('detail-name').value); 
             hideReturModal(); 
-            updatePendingList();
+            updatePendingList(); // Segarkan tampilan depan
         }
 
-        function delEntry(eid) { if(confirm("Hapus riwayat ini?")) { salesData[activeSalesId] = salesData[activeSalesId].filter(x=>x.id!==eid); save(); renderHistory(); updatePendingList(); } }
+        function delEntry(eid) { if(confirm("Hapus?")) { salesData[activeSalesId] = salesData[activeSalesId].filter(x=>x.id!==eid); save(); renderHistory(); updatePendingList(); } }
 
-        function showStats() {
-            document.getElementById('main-view').classList.add('hidden');
-            document.getElementById('sales-detail').classList.add('hidden');
-            document.getElementById('stats-view').classList.remove('hidden');
-            renderStats();
+        function copyToClipboardFallback(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) showToast("SALIN BERHASIL!");
+                else showToast("GAGAL MENYALIN");
+            } catch (err) {
+                showToast("ERROR SAAT MENYALIN");
+            }
+            document.body.removeChild(textArea);
         }
 
-        function hideStats() {
-            document.getElementById('stats-view').classList.add('hidden');
-            document.getElementById('main-view').classList.remove('hidden');
+        async function share(eid, type) {
+            const e = salesData[activeSalesId].find(x=>x.id===eid), n = document.getElementById('detail-name').value, r = calc(e);
+            const ak = formatUnitDetailed(e.stokKecilTotal, 5, 'Pak'), ab = formatUnitDetailed(e.stokBesarTotal, 25, 'Biji');
+            const rk = formatUnitDetailed(e.sisaKecil, 5, 'Pak'), rb = formatUnitDetailed(e.sisaBesar, 25, 'Biji');
+            const lk = formatUnitDetailed(r.lakuK, 5, 'Pak'), lb = formatUnitDetailed(r.lakuB, 25, 'Biji');
+            const dtStr = new Date(e.date).toLocaleString('id-ID');
+            
+            if(type==='text') {
+                const t = `*LAPORAN SAUR*\nSales: ${n.toUpperCase()}\n${e.isMerged ? '_[LAPORAN GABUNGAN]_\n' : ''}\nAmbil:\n- K: ${ak}\n- B: ${ab}\n\nRetur:\n- K: ${rk}\n- B: ${rb}\n\nLaku:\n- K: ${lk}\n- B: ${lb}\n\n*SETORAN: ${formatMoney(r.netto)}*\nStatus: ${e.isPaid?'LUNAS':'PENDING'}`;
+                copyToClipboardFallback(t);
+            } else {
+                document.getElementById('ss-sales-name').innerText = n.toUpperCase();
+                document.getElementById('ss-date').innerText = dtStr + (e.isMerged ? ' (GABUNGAN)' : '');
+                document.getElementById('ss-ambil-kecil').innerText = ak;
+                document.getElementById('ss-ambil-besar').innerText = ab;
+                document.getElementById('ss-retur-kecil').innerText = rk;
+                document.getElementById('ss-retur-besar').innerText = rb;
+                document.getElementById('ss-laku-kecil').innerText = lk;
+                document.getElementById('ss-laku-besar').innerText = lb;
+                document.getElementById('ss-bruto').innerText = formatMoney(r.bruto);
+                document.getElementById('ss-komisi').innerText = formatMoney(r.komisi);
+                document.getElementById('ss-netto').innerText = formatMoney(r.netto);
+                const st = document.getElementById('ss-status'); st.innerText = e.isPaid ? "LUNAS" : "PENDING";
+                st.style.background = e.isPaid ? "#dcfce7" : "#fee2e2"; st.style.color = e.isPaid ? "#166534" : "#991b1b";
+                showToast("MEMBUAT GAMBAR...");
+                const canvas = await html2canvas(document.getElementById('capture-area'), {scale:2});
+                const link = document.createElement('a'); link.download=`SAUR_${n}.png`; link.href=canvas.toDataURL(); link.click();
+            }
         }
 
+        function showAddSalesModal() { document.getElementById('modal-sales').classList.remove('hidden'); }
+        function hideModal() { document.getElementById('modal-sales').classList.add('hidden'); }
+        function addSales() {
+            const v = document.getElementById('new-sales-name').value.trim();
+            if(v) { salesList.push({id:Date.now(), name:v}); save(); renderDashboard(); hideModal(); document.getElementById('new-sales-name').value=''; }
+        }
+        function deleteSales() { if(confirm("Hapus Sales?")) { salesList = salesList.filter(s=>s.id!==activeSalesId); delete salesData[activeSalesId]; save(); closeDetail(); } }
+        function triggerSecretReset() { clicks++; if(clicks>5) document.getElementById('secret-reset-area').classList.toggle('hidden'); setTimeout(()=>clicks=0, 3000); }
+        function clearAllData() { if(confirm("Hapus semua data permanen?")) { localStorage.clear(); window.location.reload(); } }
+        function showToast(m) { const t = document.getElementById('toast'); t.innerText=m; t.style.opacity=1; setTimeout(()=>t.style.opacity=0, 2000); }
+        function showStats() { document.getElementById('main-view').classList.add('hidden'); document.getElementById('stats-view').classList.remove('hidden'); renderStats(); }
+        function hideStats() { document.getElementById('main-view').classList.remove('hidden'); document.getElementById('stats-view').classList.add('hidden'); }
         function renderStats() {
-            const filter = document.getElementById('stats-month-filter').value;
-            const container = document.getElementById('stats-content');
-            container.innerHTML = '';
-            
-            let grandBruto = 0, grandKomisi = 0, grandNetto = 0;
-            
+            const f = document.getElementById('stats-month-filter').value;
+            let total = 0, html = '';
             salesList.forEach(s => {
-                const entries = salesData[s.id] || [];
-                let sBruto = 0, sKomisi = 0, sNetto = 0;
-                
-                entries.forEach(e => {
-                    if(e.date.startsWith(filter) && e.isUpdated) {
-                        const r = calc(e);
-                        sBruto += r.bruto; sKomisi += r.komisi; sNetto += r.netto;
-                    }
-                });
-                
-                if(sBruto > 0) {
-                    grandBruto += sBruto; grandKomisi += sKomisi; grandNetto += sNetto;
-                    const card = document.createElement('div');
-                    card.className = "card p-3 border-l-4 border-indigo-500";
-                    card.innerHTML = `
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs font-black text-gray-700 uppercase italic">${s.name}</span>
-                            <span class="text-xs font-bold text-indigo-600">${formatMoney(sNetto)}</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-[9px] font-bold text-gray-400 uppercase">
-                            <div>Bruto: ${formatMoney(sBruto)}</div>
-                            <div>Komisi: ${formatMoney(sKomisi)}</div>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                }
+                const sN = (salesData[s.id]||[]).filter(x=>x.date.startsWith(f) && x.isUpdated).reduce((a,x)=>a+calc(x).netto, 0);
+                if(sN > 0) { total += sN; html += `<div class="card p-3 flex justify-between mb-2 text-xs"><b>${s.name.toUpperCase()}</b><b class="text-indigo-600">${formatMoney(sN)}</b></div>`; }
             });
-            
-            const summary = document.createElement('div');
-            summary.className = "bg-indigo-600 text-white p-4 rounded-xl shadow-lg italic";
-            summary.innerHTML = `
-                <p class="text-[10px] font-bold uppercase opacity-80 mb-1">Total Netto Keseluruhan</p>
-                <p class="text-xl font-black mb-3">${formatMoney(grandNetto)}</p>
-                <div class="grid grid-cols-2 gap-2 text-[10px] border-t border-white/20 pt-2 opacity-90">
-                    <div>Total Bruto: <br>${formatMoney(grandBruto)}</div>
-                    <div>Total Komisi: <br>${formatMoney(grandKomisi)}</div>
-                </div>
-            `;
-            container.prepend(summary);
-            
-            if(container.children.length === 1) {
-                container.innerHTML = `<div class="text-center py-10 text-gray-400 text-xs font-bold uppercase italic">Tidak ada data di bulan ini</div>`;
-            }
-        }
-
-        function triggerSecretReset() {
-            secretClicks++;
-            if(secretClicks >= 5) {
-                document.getElementById('secret-reset-area').classList.remove('hidden');
-            }
-        }
-
-        function clearAllData() {
-            if(confirm("HAPUS SEMUA DATA PERMANEN?")) {
-                localStorage.clear();
-                location.reload();
-            }
-        }
-
-        // Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                const swCode = `self.addEventListener('fetch', function(e) { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });`;
-                const blob = new Blob([swCode], {type: 'text/javascript'});
-                const swUrl = URL.createObjectURL(blob);
-                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW failed', err));
-            });
+            document.getElementById('stats-content').innerHTML = `<div class="card p-5 bg-indigo-600 text-white mb-4"><p class="text-[9px] font-bold opacity-70 mb-1">PENGHASILAN BERSIH ${f}</p><h3 class="text-2xl font-black italic">${formatMoney(total)}</h3></div>` + html;
         }
 
         load(); renderDashboard();
+        const now = new Date(); document.getElementById('stats-month-filter').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
     </script>
 </body>
 </html>
